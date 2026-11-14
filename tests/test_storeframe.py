@@ -138,3 +138,20 @@ def test_cli(tmp_path: Path, capsys):
     assert Image.open(target).size == (330, 717)
     assert cli.main(["devices"]) == 0
     assert cli.main(["one", str(spec), str(source), str(target), "--screen", "missing"]) == 2
+
+
+def test_folders_without_captures_are_not_locales(tmp_path: Path):
+    # another app's captures nest beside the locale folders, as in almucantar
+    captured = tmp_path / "captured"
+    (captured / "en-US").mkdir(parents=True)
+    capture().save(captured / "en-US" / "phone-01-home.png")
+    (captured / "otherapp" / "en-US").mkdir(parents=True)
+    capture().save(captured / "otherapp" / "en-US" / "phone-01-home.png")
+    out = tmp_path / "framed"
+    kept = out / "otherapp" / "en-US" / "framed-before.png"
+    kept.parent.mkdir(parents=True)
+    kept.write_bytes(b"")
+
+    report = storeframe.frame_directory(design("plain"), "android", captured, out)
+    assert [p.relative_to(out).as_posix() for p in report.written] == ["en-US/phone-01-home.png"]
+    assert kept.exists()

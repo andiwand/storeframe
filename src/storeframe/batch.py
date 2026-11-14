@@ -20,6 +20,18 @@ class Report:
     missing_locales: list[str] = field(default_factory=list)
 
 
+def discover_locales(captured: Path) -> list[str]:
+    """The folders of ``captured`` that hold captures directly.
+
+    Folders without PNGs are not locales: fastlane trees often keep other things
+    next to the locale folders (another app's captures, for example), and taking
+    one of those for a locale would empty the output folder of the same name.
+    """
+    if not captured.is_dir():
+        return []
+    return sorted(p.name for p in captured.iterdir() if p.is_dir() and any(p.glob("*.png")))
+
+
 def frame_directory(
     design: Design,
     platform: str,
@@ -33,6 +45,7 @@ def frame_directory(
 ) -> Report:
     """Frame every capture under ``captured/<locale>/`` into ``out/<locale>/``.
 
+    Without ``locales``, every folder of ``captured`` that holds PNGs is a locale.
     Each locale's output folder is emptied first (``clean``), so a renamed screen
     does not leave a stale picture behind for the upload to find. Files that match
     no screen of the design are skipped and reported.
@@ -42,7 +55,7 @@ def frame_directory(
     report = Report()
 
     if locales is None:
-        locales = sorted(p.name for p in captured.iterdir() if p.is_dir()) if captured.is_dir() else []
+        locales = discover_locales(captured)
 
     for locale in locales:
         folder = captured / locale

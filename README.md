@@ -48,8 +48,9 @@ storeframe devices          # the devices, platforms and styles there are
 ```
 
 Each locale folder of the output is emptied first, so a renamed screen never
-leaves a stale picture behind for the upload to find. Pass `--locale` (repeatable)
-when the capture folder holds anything other than locale folders.
+leaves a stale picture behind for the upload to find. Without `--locale`
+(repeatable), every folder that holds PNGs is a locale; other folders, such as
+another app's captures, are left alone.
 
 ## Styles
 
