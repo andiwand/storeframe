@@ -1,0 +1,64 @@
+# Tests every push and pull request; publishes to PyPI when a GitHub release is
+# published. Publishing uses PyPI Trusted Publishing (no token): register this
+# repository, the workflow "publish.yml" and the environment "pypi" as a
+# publisher on pypi.org first.
+name: test and publish
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  release:
+    types: [published]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        python: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: ${{ matrix.python }}
+      - run: uv pip install -e '.[dev]'
+      - run: ruff check src tests
+      - run: pytest -q
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: version matches the release tag
+        if: github.event_name == 'release'
+        run: |
+          version=$(grep -Po '__version__ = "\K[^"]+' src/storeframe/__init__.py)
+          tag="${GITHUB_REF_NAME#v}"
+          [ "$version" = "$tag" ] || { echo "release $GITHUB_REF_NAME but __version__ is $version"; exit 1; }
+      - run: uv build
+      - run: uvx twine check dist/*
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/storeframe/
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+      - uses: pypa/gh-action-pypi-publish@release/v1

@@ -1,0 +1,46 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "storeframe"
+dynamic = ["version"]
+description = "Frame app screenshots in drawn device bodies for the App Store and Google Play"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [{ name = "Andreas Stefl" }]
+# the code is MIT; the bundled Nunito font is SIL OFL 1.1
+license = "MIT AND OFL-1.1"
+license-files = ["LICENSE", "src/storeframe/fonts/OFL.txt"]
+keywords = ["screenshots", "app store", "google play", "fastlane", "device frame", "mockup"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Software Development :: Build Tools",
+]
+dependencies = ["Pillow>=10.1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+storeframe = "storeframe.cli:main"
+
+[tool.hatch.version]
+path = "src/storeframe/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/storeframe"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "README.md", "LICENSE", "pyproject.toml"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py310"
